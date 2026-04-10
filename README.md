@@ -50,4 +50,3 @@ This repository currently contains the project foundation:
 5. Add auto-generated tactical takeaways.
 
 Start with [docs/MVP_SPEC.md](/D:/CODE/Projects/Football/docs/MVP_SPEC.md) and [db/schema/001_init.sql](/D:/CODE/Projects/Football/db/schema/001_init.sql).
-
