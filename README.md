@@ -40,13 +40,24 @@ This repository currently contains the project foundation:
 - MVP and product spec
 - folder ownership and architecture notes
 - initial relational schema for matches, events, lineups, metrics, and reports
+- a bootstrap `FastAPI` service
+- an ETL CLI skeleton with first metric helpers
+- a local `docker compose` stack for Postgres + API
 
 ## Recommended Build Order
 
 1. Load one open dataset slice and validate the schema.
-2. Compute a first batch of team/match tactical metrics.
-3. Expose match and team endpoints from the API.
+2. Replace editorial placeholder responses with database-backed reads.
+3. Compute a first batch of team/match tactical metrics.
 4. Build the first `Match Page` and `Team Page`.
 5. Add auto-generated tactical takeaways.
+
+## Run The Bootstrap Stack
+
+1. Copy `.env.example` to `.env`.
+2. Start Postgres with `docker compose up db`.
+3. Install API dependencies from `services/api/requirements.txt`.
+4. Run the API with `uvicorn app.main:app --app-dir services/api --reload`.
+5. Inspect the ETL bootstrap plan with `python jobs/etl/main.py plan`.
 
 Start with [docs/MVP_SPEC.md](/D:/CODE/Projects/Football/docs/MVP_SPEC.md) and [db/schema/001_init.sql](/D:/CODE/Projects/Football/db/schema/001_init.sql).

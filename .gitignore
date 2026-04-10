@@ -1,5 +1,6 @@
 .env
 .env.*
+!.env.example
 .venv/
 __pycache__/
 *.pyc
@@ -12,4 +13,3 @@ coverage/
 data/raw/
 data/processed/
 *.sqlite3
-
