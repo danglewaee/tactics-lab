@@ -2,6 +2,12 @@
 
 `Tactics Lab` is a football analysis project built around a clear thesis: explain how teams build up, press, and control space instead of just showing surface-level stats.
 
+## Purpose
+
+Tactics Lab is a football tactics intelligence platform focused on Manchester United and Portugal. It turns event-level match data into clear tactical insights about build-up patterns, pressing behavior, territorial control, and player influence.
+
+The goal is not to clone a score app. The goal is to show how a football fan with an engineering mindset can read the game through data, visualizations, and explainable tactical reports.
+
 The portfolio angle is intentionally personal:
 - club lens: Manchester United
 - national team lens: Portugal
@@ -43,6 +49,7 @@ This repository currently contains the project foundation:
 - a bootstrap `FastAPI` service
 - an ETL CLI skeleton with first metric helpers
 - a local `docker compose` stack for Postgres + API
+- a documented data-source strategy for event data, public stats, and tactical references
 
 ## Recommended Build Order
 
@@ -61,3 +68,5 @@ This repository currently contains the project foundation:
 5. Inspect the ETL bootstrap plan with `python jobs/etl/main.py plan`.
 
 Start with [docs/MVP_SPEC.md](/D:/CODE/Projects/Football/docs/MVP_SPEC.md) and [db/schema/001_init.sql](/D:/CODE/Projects/Football/db/schema/001_init.sql).
+
+Data-source decisions are documented in [docs/DATA_STRATEGY.md](/D:/CODE/Projects/Football/docs/DATA_STRATEGY.md).

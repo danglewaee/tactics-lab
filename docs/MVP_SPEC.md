@@ -4,6 +4,10 @@
 
 Build a football tactics analysis app that turns event data into readable tactical insight.
 
+Purpose statement:
+
+> Tactics Lab is a football tactics intelligence platform focused on Manchester United and Portugal, designed to turn event-level match data into clear tactical insights about build-up patterns, pressing behavior, territorial control, and player influence.
+
 The product should feel opinionated, not generic:
 - it should reflect a real fan perspective
 - it should focus on team identity and game patterns
@@ -156,6 +160,14 @@ This is important because it creates an explainable path from raw events to insi
 
 Use an event-data provider with a structure similar to `StatsBomb`.
 
+Primary V1 data source:
+- open event data that includes coordinates, event types, teams, players, lineups, and match metadata
+
+Secondary context sources:
+- Premier League / Opta-style public stat tables for familiar aggregated metrics
+- Transfermarkt for market and squad context only
+- public tactical writing for vocabulary and qualitative validation
+
 ### Important constraint
 
 Open-data coverage for MU may be partial depending on provider and competition selection.
@@ -167,6 +179,9 @@ Practical approach:
 - expand to richer club coverage later if a different provider is added
 
 This is an implementation assumption, not a hard product limitation.
+
+Full data-source policy:
+- see [DATA_STRATEGY.md](/D:/CODE/Projects/Football/docs/DATA_STRATEGY.md)
 
 ## 10. Engineering Goals
 
@@ -216,4 +231,3 @@ The MVP is successful if:
 - a user can open a MU or Portugal match and understand the tactical shape in under 60 seconds
 - the app surfaces at least 3 non-trivial tactical takeaways from event data
 - the architecture is clean enough to extend into scouting or computer vision later
-
