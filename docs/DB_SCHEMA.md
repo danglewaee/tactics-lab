@@ -37,6 +37,17 @@ Stores clubs and national teams in the same table so MU and Portugal can be quer
 
 Stores player identity and lightweight profile metadata.
 
+### `player_position_profiles`
+
+Stores curated position frequency context for players.
+
+Examples:
+- Bruno Fernandes appearing as AM, CM, or RW
+- a Portugal forward splitting minutes between LW and ST
+- a full-back profile showing LB/RB flexibility
+
+This table is context enrichment. It should not replace event-level tactical evidence.
+
 ### `matches`
 
 Stores fixture context:
@@ -128,6 +139,7 @@ Player level:
 - MU match event stream ordered by `index_in_match`
 - team tactical metrics for a selected match
 - player contribution leaders across a match sample
+- position frequency context for a selected player
 - generated tactical summary for a match page
 
 ## Future Extensions
@@ -139,4 +151,3 @@ Later, the schema can be extended with:
 - materialized views for team windows and rolling averages
 
 The initial SQL file lives at [db/schema/001_init.sql](/D:/CODE/Projects/Football/db/schema/001_init.sql).
-

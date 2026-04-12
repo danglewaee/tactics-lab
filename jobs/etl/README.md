@@ -18,6 +18,8 @@ Two simple commands are available once Python dependencies are installed:
 The initial implementation is intentionally light:
 - provider manifest definition
 - event normalization helpers
+- curated player position profile reader
 - first metric primitives for progressive passes and lane split
 - rule-based takeaway generation
 
+Manual player context starts from `data/manual/player_position_profiles.csv`.

@@ -70,6 +70,8 @@ Role:
 Use it for:
 - linking player identity pages
 - manual context around age, contract, transfer history, and market value
+- curated position frequency, such as how often a player appears at CM, AM, RW, ST, or full-back roles
+- role versatility analysis, especially for players like Bruno Fernandes or Portugal attackers who can appear in multiple zones
 - future scouting module context
 
 Do not use it for:
@@ -81,6 +83,12 @@ Why:
 - Transfermarkt is strong for market context, not tactical event data
 - relying on scraped market pages would make the project fragile
 - market value is a different product question from build-up and pressing analysis
+
+Position frequency policy:
+- position frequency is valuable and should be supported
+- ingest it only as curated/manual context unless there is an explicitly permitted data source
+- store source URLs and snapshot dates for auditability
+- use it to enrich player pages and role analysis, not to prove match-level tactical claims
 
 ### 4. Public Tactical Analysis
 
@@ -111,8 +119,9 @@ V1 should be built around this pipeline:
 2. Normalize matches, teams, players, lineups, and events.
 3. Compute tactical metrics from coordinates and event sequences.
 4. Store metrics in `team_match_metrics` and `player_match_metrics`.
-5. Generate rule-based tactical takeaways with evidence keys.
-6. Render maps, networks, and summaries in the UI.
+5. Join curated player context such as position frequency when showing player roles.
+6. Generate rule-based tactical takeaways with evidence keys.
+7. Render maps, networks, and summaries in the UI.
 
 ## Core Tactical Metrics And Data Requirements
 

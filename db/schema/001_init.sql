@@ -68,6 +68,27 @@ create table players (
     unique (provider_id, external_id)
 );
 
+create table player_position_profiles (
+    player_position_profile_id bigserial primary key,
+    provider_id bigint not null references providers(provider_id),
+    player_id bigint references players(player_id),
+    external_player_ref text,
+    player_name text not null,
+    position_name text not null,
+    position_group text,
+    appearances integer check (appearances is null or appearances >= 0),
+    starts integer check (starts is null or starts >= 0),
+    minutes_played integer check (minutes_played is null or minutes_played >= 0),
+    goals integer check (goals is null or goals >= 0),
+    assists integer check (assists is null or assists >= 0),
+    position_share numeric(6,4) check (position_share is null or (position_share >= 0 and position_share <= 1)),
+    source_url text,
+    snapshot_date date not null default current_date,
+    metadata jsonb not null default '{}'::jsonb,
+    unique (provider_id, external_player_ref, position_name, snapshot_date),
+    check (player_id is not null or external_player_ref is not null)
+);
+
 create table matches (
     match_id bigserial primary key,
     provider_id bigint not null references providers(provider_id),
@@ -189,10 +210,16 @@ create index idx_matches_teams on matches (home_team_id, away_team_id);
 create index idx_events_match_team_type on events (match_id, team_id, event_type);
 create index idx_events_match_possession on events (match_id, possession_id, index_in_match);
 create index idx_events_player on events (player_id);
+create index idx_player_position_profiles_player on player_position_profiles (player_id, position_name);
+create index idx_player_position_profiles_external on player_position_profiles (provider_id, external_player_ref);
 create index idx_team_metrics_lookup on team_match_metrics (team_id, metric_key, match_id desc);
 create index idx_player_metrics_lookup on player_match_metrics (player_id, metric_key, match_id desc);
 create index idx_tactical_reports_scope on tactical_reports (scope_type, scope_key);
 
 insert into providers (code, name, base_reference)
 values ('statsbomb', 'StatsBomb / event-data style provider', 'provider-configured')
+on conflict (code) do nothing;
+
+insert into providers (code, name, base_reference)
+values ('transfermarkt', 'Transfermarkt / curated player context', 'manual-curated')
 on conflict (code) do nothing;

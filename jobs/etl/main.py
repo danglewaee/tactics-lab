@@ -32,6 +32,7 @@ def main() -> int:
             "ingest_matches",
             "ingest_lineups",
             "ingest_events",
+            "ingest_manual_position_profiles",
             "compute_team_match_metrics",
             "compute_player_match_metrics",
             "generate_tactical_report",
@@ -45,4 +46,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
