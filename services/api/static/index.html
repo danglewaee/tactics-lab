@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tactics Lab Preview</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Tactics Lab Preview</p>
+          <h1>Football tactics, not just football stats.</h1>
+          <p class="hero-text">
+            This preview reads the current API and shows the project direction:
+            focus teams, match windows, and tactical report structure.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <div class="mini-stat">
+            <span class="mini-label">Lens</span>
+            <strong>Manchester United + Portugal</strong>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-label">Current engine</span>
+            <strong>API + Postgres reads + StatsBomb ETL</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="column column-teams">
+          <div class="section-head">
+            <h2>Teams</h2>
+            <span id="teams-count" class="pill">0 loaded</span>
+          </div>
+          <div id="teams" class="stack"></div>
+        </section>
+
+        <section class="column column-matches">
+          <div class="section-head">
+            <h2>Matches</h2>
+            <span id="active-team" class="pill muted">Select a team</span>
+          </div>
+          <div id="matches" class="stack"></div>
+        </section>
+
+        <section class="column column-detail">
+          <div class="section-head">
+            <h2>Match Detail</h2>
+            <span id="active-match" class="pill muted">Waiting</span>
+          </div>
+          <article id="detail" class="detail-card empty-state">
+            <h3>No match selected</h3>
+            <p>Pick a team, then pick a match to inspect the current output shape.</p>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+  </html>
