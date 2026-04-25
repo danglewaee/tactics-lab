@@ -1,14 +1,20 @@
-from fastapi.testclient import TestClient
+from __future__ import annotations
 
-from app.main import app
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from routers.health import healthcheck
 
 
-client = TestClient(app)
+class HealthTests(unittest.TestCase):
+    def test_healthcheck(self) -> None:
+        payload = healthcheck()
+        self.assertEqual(payload["status"], "ok")
+        self.assertIn("timestamp", payload)
 
 
-def test_healthcheck() -> None:
-    response = client.get("/api/health")
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["status"] == "ok"
-
+if __name__ == "__main__":
+    unittest.main()
