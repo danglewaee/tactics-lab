@@ -7,13 +7,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from services.editorial import (
-    _match_card_from_row,
-    _resolve_team_type,
-    get_match_detail,
-    get_team,
-    list_teams,
-)
+from schemas.match import MetricValue
+from services.editorial import _match_card_from_row, _resolve_team_type, get_match_detail, get_team, get_team_style, list_teams
 
 
 class DatabaseReadTests(unittest.TestCase):
@@ -82,6 +77,8 @@ class DatabaseReadTests(unittest.TestCase):
         match_row = {
             "match_id": 77,
             "external_id": "9001",
+            "home_team_id": 1,
+            "away_team_id": 2,
             "home_team_name": "Manchester United",
             "away_team_name": "Portugal",
             "home_score": 3,
@@ -91,7 +88,10 @@ class DatabaseReadTests(unittest.TestCase):
 
         with patch("services.editorial._load_match_row", return_value=match_row), patch(
             "services.editorial._load_match_takeaways", return_value=[]
-        ):
+        ), patch(
+            "services.editorial._load_match_metrics",
+            return_value=[MetricValue(key="progressive_passes", label="Progressive passes", value=9.0, display_value="9")],
+        ) as metrics_mock:
             match = get_match_detail("77")
 
         self.assertIsNotNone(match)
@@ -99,7 +99,31 @@ class DatabaseReadTests(unittest.TestCase):
         self.assertEqual(match.subject_team_slug, "manchester-united")
         self.assertEqual(match.data_status, "ready")
         self.assertIn("pass_network", match.chart_blocks)
+        self.assertEqual(match.metrics[0].label, "Progressive passes")
         self.assertEqual(match.takeaways[0].title, "Metrics pending")
+        metrics_mock.assert_called_once_with(77, 1)
+
+    def test_get_match_detail_filters_takeaways_to_subject_team(self) -> None:
+        match_row = {
+            "match_id": 77,
+            "external_id": "9001",
+            "home_team_id": 1,
+            "away_team_id": 2,
+            "home_team_name": "Manchester United",
+            "away_team_name": "Portugal",
+            "home_score": 3,
+            "away_score": 2,
+            "has_events": True,
+        }
+
+        with patch("services.editorial._load_match_row", return_value=match_row), patch(
+            "services.editorial._load_match_metrics", return_value=[]
+        ), patch(
+            "services.editorial._load_match_takeaways", return_value=[]
+        ) as reports_mock:
+            get_match_detail("77")
+
+        reports_mock.assert_called_once_with(77, subject_team_id=1)
 
     def test_resolve_team_type_infers_national_team_from_country_name(self) -> None:
         team_type = _resolve_team_type(
@@ -112,6 +136,52 @@ class DatabaseReadTests(unittest.TestCase):
         )
 
         self.assertEqual(team_type, "national_team")
+
+    def test_get_team_style_uses_window_metrics(self) -> None:
+        team_row = {
+            "team_id": 1,
+            "external_id": "1",
+            "name": "Manchester United",
+            "short_name": "MU",
+            "country_name": "England",
+            "team_type": None,
+            "match_count": 3,
+        }
+        window_rows = [
+            {
+                "window_type": "all_matches",
+                "window_key": "team:1:all_matches",
+                "match_count": 3,
+                "window_start_date": "2024-01-01",
+                "window_end_date": "2024-01-30",
+                "metric_key": "field_tilt",
+                "metric_value": 0.62,
+                "competition_name": None,
+                "season_name": None,
+            },
+            {
+                "window_type": "all_matches",
+                "window_key": "team:1:all_matches",
+                "match_count": 3,
+                "window_start_date": "2024-01-01",
+                "window_end_date": "2024-01-30",
+                "metric_key": "progressive_passes",
+                "metric_value": 15,
+                "competition_name": None,
+                "season_name": None,
+            },
+        ]
+
+        with patch("services.editorial._load_team_row_by_slug", return_value=team_row), patch(
+            "services.editorial._query_rows_safe", return_value=window_rows
+        ):
+            response = get_team_style("manchester-united")
+
+        self.assertIsNotNone(response)
+        self.assertEqual(response.data_status, "ready")
+        self.assertEqual(len(response.windows), 1)
+        self.assertEqual(response.windows[0].label, "All ingested matches")
+        self.assertEqual(response.windows[0].metrics[0].label, "Field tilt")
 
 
 if __name__ == "__main__":

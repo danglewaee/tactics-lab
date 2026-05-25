@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from schemas.match import MatchCard
+from schemas.match import MatchCard, MetricValue
 
 
 class TeamSummary(BaseModel):
@@ -25,3 +25,18 @@ class MatchWindowResponse(BaseModel):
     team_name: str
     matches: list[MatchCard] = Field(default_factory=list)
 
+
+class TeamStyleWindow(BaseModel):
+    window_type: Literal["all_matches", "competition", "season", "competition_season"]
+    window_key: str
+    label: str
+    match_count: int
+    date_range_label: str | None = None
+    metrics: list[MetricValue] = Field(default_factory=list)
+
+
+class TeamStyleResponse(BaseModel):
+    team_slug: str
+    team_name: str
+    data_status: Literal["pending_ingestion", "partial", "ready"] = "pending_ingestion"
+    windows: list[TeamStyleWindow] = Field(default_factory=list)

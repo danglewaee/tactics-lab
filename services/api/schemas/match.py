@@ -9,6 +9,13 @@ class TacticalTakeaway(BaseModel):
     evidence_keys: list[str] = Field(default_factory=list)
 
 
+class MetricValue(BaseModel):
+    key: str
+    label: str
+    value: float
+    display_value: str
+
+
 class MatchCard(BaseModel):
     match_id: str
     title: str
@@ -20,6 +27,7 @@ class MatchCard(BaseModel):
 
 class MatchDetail(MatchCard):
     chart_blocks: list[str] = Field(default_factory=list)
+    metrics: list[MetricValue] = Field(default_factory=list)
     takeaways: list[TacticalTakeaway] = Field(default_factory=list)
 
 
@@ -47,4 +55,3 @@ class MatchReportBundle(BaseModel):
     match_id: str
     generated: bool
     reports: list[TacticalTakeaway] = Field(default_factory=list)
-

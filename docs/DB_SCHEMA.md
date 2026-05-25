@@ -99,6 +99,23 @@ Examples:
 - `receptions_between_lines`
 - `network_centrality`
 
+### `team_window_metrics`
+
+Stores one row per metric per team per historical window.
+
+Initial window types:
+- `all_matches`
+- `competition`
+- `season`
+- `competition_season`
+
+Examples:
+- Manchester United style profile across all ingested matches
+- Portugal style profile inside one tournament
+- a season-specific build-up profile for one team
+
+This table is the first historical aggregation layer above `team_match_metrics`.
+
 ### `tactical_reports`
 
 Stores generated insight blocks for:
@@ -108,7 +125,7 @@ Stores generated insight blocks for:
 
 ## Why Metrics Are Stored Long-Form
 
-`team_match_metrics` and `player_match_metrics` use `metric_key` + `metric_value` instead of wide fixed columns.
+`team_match_metrics`, `player_match_metrics`, and `team_window_metrics` use `metric_key` + `metric_value` instead of wide fixed columns.
 
 This keeps the MVP flexible because new tactical metrics will change often while you learn what is actually useful.
 
@@ -121,6 +138,14 @@ Team level:
 - `high_regains`
 - `middle_regains`
 - `counterpress_regains`
+- `left_lane_build_up_share`
+- `center_lane_build_up_share`
+- `right_lane_build_up_share`
+
+Window level:
+- `field_tilt`
+- `progressive_passes`
+- `high_regains`
 - `left_lane_build_up_share`
 - `center_lane_build_up_share`
 - `right_lane_build_up_share`
@@ -138,6 +163,7 @@ Player level:
 - all matches for Portugal in a competition window
 - MU match event stream ordered by `index_in_match`
 - team tactical metrics for a selected match
+- team style profile aggregated across a season or competition
 - player contribution leaders across a match sample
 - position frequency context for a selected player
 - generated tactical summary for a match page

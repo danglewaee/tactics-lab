@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from schemas.match import MatchCard, MatchDetail, MatchNetwork, MatchReportBundle, TacticalTakeaway
-from schemas.team import MatchWindowResponse, TeamDetail, TeamSummary
+from schemas.match import MatchCard, MatchDetail, MatchNetwork, MatchReportBundle, MetricValue, TacticalTakeaway
+from schemas.team import MatchWindowResponse, TeamDetail, TeamStyleResponse, TeamStyleWindow, TeamSummary
 from services.database import DatabaseUnavailableError, query_all, query_one
 
 
@@ -23,6 +23,14 @@ DEFAULT_CHART_BLOCKS = [
     "regain_zone_map",
     "progressive_pass_map",
 ]
+METRIC_LABELS = {
+    "progressive_passes": "Progressive passes",
+    "field_tilt": "Field tilt",
+    "left_lane_build_up_share": "Left build-up share",
+    "center_lane_build_up_share": "Center build-up share",
+    "right_lane_build_up_share": "Right build-up share",
+    "high_regains": "High regains",
+}
 
 
 EDITORIAL_TEAMS: dict[str, TeamDetail] = {
@@ -187,6 +195,37 @@ def list_team_matches(team_slug: str) -> MatchWindowResponse | None:
     )
 
 
+def get_team_style(team_slug: str) -> TeamStyleResponse | None:
+    row = _load_team_row_by_slug(team_slug)
+    if row is None:
+        editorial = EDITORIAL_TEAMS.get(team_slug)
+        if editorial is None:
+            return None
+        return TeamStyleResponse(
+            team_slug=team_slug,
+            team_name=editorial.name,
+            data_status="partial",
+            windows=[],
+        )
+
+    team_id = int(row["team_id"])
+    windows = _load_team_style_windows(team_id)
+    if windows:
+        return TeamStyleResponse(
+            team_slug=team_slug,
+            team_name=row["name"],
+            data_status="ready",
+            windows=windows,
+        )
+
+    return TeamStyleResponse(
+        team_slug=team_slug,
+        team_name=row["name"],
+        data_status="partial" if _team_has_events(team_id) else "pending_ingestion",
+        windows=[],
+    )
+
+
 def get_match_detail(match_id: str) -> MatchDetail | None:
     row = _load_match_row(match_id)
     if row is None:
@@ -194,7 +233,9 @@ def get_match_detail(match_id: str) -> MatchDetail | None:
 
     subject_slug, subject_name = _subject_team_for_match(row)
     focus_areas = _focus_areas_for_slug(subject_slug)
-    reports = _load_match_takeaways(row["match_id"])
+    subject_team_id = _subject_team_id_for_match(row, subject_slug)
+    metrics = _load_match_metrics(int(row["match_id"]), subject_team_id)
+    reports = _load_match_takeaways(int(row["match_id"]), subject_team_id=subject_team_id)
 
     if not reports:
         reports = [
@@ -217,6 +258,7 @@ def get_match_detail(match_id: str) -> MatchDetail | None:
         data_status="ready" if row["has_events"] else "pending_ingestion",
         chart_blocks=DEFAULT_CHART_BLOCKS if row["has_events"] else [],
         focus_areas=focus_areas,
+        metrics=metrics,
         takeaways=reports,
     )
 
@@ -369,17 +411,19 @@ def _load_match_row(match_id: str) -> dict[str, Any] | None:
     )
 
 
-def _load_match_takeaways(match_id: int) -> list[TacticalTakeaway]:
-    rows = _query_rows_safe(
-        """
+def _load_match_takeaways(match_id: int, subject_team_id: int | None = None) -> list[TacticalTakeaway]:
+    sql = """
         select title, summary, evidence
         from tactical_reports
         where match_id = %s
-        order by created_at desc, tactical_report_id desc
-        limit 5
-        """,
-        (match_id,),
-    )
+    """
+    params: tuple[Any, ...] = (match_id,)
+    if subject_team_id is not None:
+        sql += " and subject_team_id = %s"
+        params += (subject_team_id,)
+    sql += " order by tactical_report_id asc limit 5"
+
+    rows = _query_rows_safe(sql, params)
     takeaways: list[TacticalTakeaway] = []
     for row in rows:
         evidence = row.get("evidence") if isinstance(row.get("evidence"), dict) else {}
@@ -393,6 +437,78 @@ def _load_match_takeaways(match_id: int) -> list[TacticalTakeaway]:
     return takeaways
 
 
+def _load_match_metrics(match_id: int, team_id: int) -> list[MetricValue]:
+    rows = _query_rows_safe(
+        """
+        select metric_key, metric_value
+        from team_match_metrics
+        where match_id = %s and team_id = %s
+        order by metric_key
+        """,
+        (match_id, team_id),
+    )
+    return [_metric_value_from_row(row) for row in rows if row.get("metric_key") in METRIC_LABELS]
+
+
+def _load_team_style_windows(team_id: int) -> list[TeamStyleWindow]:
+    rows = _query_rows_safe(
+        """
+        select
+            tw.window_type,
+            tw.window_key,
+            tw.match_count,
+            tw.window_start_date,
+            tw.window_end_date,
+            tw.metric_key,
+            tw.metric_value,
+            c.name as competition_name,
+            s.name as season_name
+        from team_window_metrics tw
+        left join competitions c on c.competition_id = tw.competition_id
+        left join seasons s on s.season_id = tw.season_id
+        where tw.team_id = %s
+        order by
+            case tw.window_type
+                when 'all_matches' then 1
+                when 'competition_season' then 2
+                when 'competition' then 3
+                when 'season' then 4
+                else 5
+            end,
+            tw.window_end_date desc nulls last,
+            tw.window_key,
+            tw.metric_key
+        """,
+        (team_id,),
+    )
+
+    windows: list[TeamStyleWindow] = []
+    by_window_key: dict[tuple[str, str], TeamStyleWindow] = {}
+
+    for row in rows:
+        metric_key = row.get("metric_key")
+        if metric_key not in METRIC_LABELS:
+            continue
+
+        window_index = (str(row["window_type"]), str(row["window_key"]))
+        window = by_window_key.get(window_index)
+        if window is None:
+            window = TeamStyleWindow(
+                window_type=row["window_type"],
+                window_key=row["window_key"],
+                label=_team_style_window_label(row),
+                match_count=int(row["match_count"]),
+                date_range_label=_date_range_label(row.get("window_start_date"), row.get("window_end_date")),
+                metrics=[],
+            )
+            by_window_key[window_index] = window
+            windows.append(window)
+
+        window.metrics.append(_metric_value_from_row(row))
+
+    return windows
+
+
 def _subject_team_for_match(match_row: dict[str, Any]) -> tuple[str, str]:
     home_slug = _slugify(match_row["home_team_name"])
     away_slug = _slugify(match_row["away_team_name"])
@@ -401,6 +517,12 @@ def _subject_team_for_match(match_row: dict[str, Any]) -> tuple[str, str]:
     if away_slug in EDITORIAL_TEAMS and home_slug not in EDITORIAL_TEAMS:
         return away_slug, match_row["away_team_name"]
     return home_slug, match_row["home_team_name"]
+
+
+def _subject_team_id_for_match(match_row: dict[str, Any], subject_slug: str) -> int:
+    if _slugify(match_row["home_team_name"]) == subject_slug:
+        return int(match_row["home_team_id"])
+    return int(match_row["away_team_id"])
 
 
 def _match_title(match_row: dict[str, Any]) -> str:
@@ -424,6 +546,55 @@ def _resolve_team_type(row: dict[str, Any], editorial: TeamDetail | None) -> str
     if row.get("country_name") and str(row["country_name"]).strip().lower() == str(row["name"]).strip().lower():
         return "national_team"
     return "club"
+
+
+def _metric_value_from_row(row: dict[str, Any]) -> MetricValue:
+    key = str(row["metric_key"])
+    value = float(row["metric_value"])
+    return MetricValue(
+        key=key,
+        label=METRIC_LABELS.get(key, key.replace("_", " ").title()),
+        value=value,
+        display_value=_format_metric_value(key, value),
+    )
+
+
+def _format_metric_value(key: str, value: float) -> str:
+    if key.endswith("_share") or key == "field_tilt":
+        return f"{value * 100:.1f}%"
+    if value.is_integer():
+        return str(int(value))
+    return f"{value:.2f}"
+
+
+def _team_style_window_label(row: dict[str, Any]) -> str:
+    window_type = str(row["window_type"])
+    competition_name = row.get("competition_name")
+    season_name = row.get("season_name")
+
+    if window_type == "all_matches":
+        return "All ingested matches"
+    if window_type == "competition_season":
+        if competition_name and season_name:
+            return f"{competition_name} · {season_name}"
+        if competition_name:
+            return str(competition_name)
+        if season_name:
+            return str(season_name)
+        return "Competition + season"
+    if window_type == "competition":
+        return str(competition_name or "Competition window")
+    if window_type == "season":
+        return str(season_name or "Season window")
+    return window_type.replace("_", " ").title()
+
+
+def _date_range_label(start_date: Any, end_date: Any) -> str | None:
+    if not start_date and not end_date:
+        return None
+    if start_date and end_date:
+        return f"{start_date} to {end_date}"
+    return str(start_date or end_date)
 
 
 def _slugify(value: str) -> str:

@@ -1,4 +1,5 @@
 const teamsEl = document.getElementById("teams");
+const teamStyleEl = document.getElementById("team-style");
 const matchesEl = document.getElementById("matches");
 const detailEl = document.getElementById("detail");
 const teamsCountEl = document.getElementById("teams-count");
@@ -32,6 +33,48 @@ function renderStatus(status) {
   return `<span class="tag status-${status}">${status.replace("_", " ")}</span>`;
 }
 
+function renderMetrics(metrics = []) {
+  if (!metrics.length) {
+    return `<p class="detail-copy">No computed team metrics yet.</p>`;
+  }
+
+  return `
+    <section class="metric-grid">
+      ${metrics
+        .map(
+          (metric) => `
+            <article class="metric-card">
+              <span class="metric-label">${metric.label}</span>
+              <strong class="metric-value">${metric.display_value}</strong>
+            </article>
+          `
+        )
+        .join("")}
+    </section>
+  `;
+}
+
+function renderCompactMetrics(metrics = []) {
+  if (!metrics.length) {
+    return "";
+  }
+
+  return `
+    <section class="metric-grid">
+      ${metrics
+        .map(
+          (metric) => `
+            <article class="metric-card compact">
+              <span class="metric-label">${metric.label}</span>
+              <strong class="metric-value">${metric.display_value}</strong>
+            </article>
+          `
+        )
+        .join("")}
+    </section>
+  `;
+}
+
 function teamCard(team) {
   return `
     <button class="card ${team.team_slug === activeTeamSlug ? "active" : ""}" data-team-slug="${team.team_slug}">
@@ -52,6 +95,43 @@ function matchCard(match) {
       </div>
       ${renderTags(match.focus_areas)}
     </button>
+  `;
+}
+
+function renderTeamStyle(style) {
+  if (!style.windows?.length) {
+    teamStyleEl.innerHTML = `
+      <article class="detail-card empty-state">
+        <h3>No historical windows yet</h3>
+        <p>Run the team window job after computing team match metrics to build season and competition style profiles.</p>
+      </article>
+    `;
+    return;
+  }
+
+  teamStyleEl.innerHTML = `
+    <div class="section-head">
+      <h3>Team Style</h3>
+      <span class="pill ${style.data_status === "ready" ? "" : "muted"}">${style.data_status.replace("_", " ")}</span>
+    </div>
+    <div class="window-list">
+      ${style.windows
+        .map(
+          (window) => `
+            <article class="window-card">
+              <div class="window-head">
+                <div>
+                  <h4 class="window-title">${window.label}</h4>
+                  <p class="window-meta">${window.match_count} match${window.match_count === 1 ? "" : "es"}${window.date_range_label ? ` · ${window.date_range_label}` : ""}</p>
+                </div>
+                <span class="tag">${window.window_type.replace("_", " ")}</span>
+              </div>
+              ${renderCompactMetrics(window.metrics)}
+            </article>
+          `
+        )
+        .join("")}
+    </div>
   `;
 }
 
@@ -85,6 +165,7 @@ function renderDetail(match) {
     </div>
     ${renderTags(match.focus_areas || [])}
     ${renderTags(match.chart_blocks || [])}
+    ${renderMetrics(match.metrics || [])}
     ${takeaways}
   `;
 }
@@ -111,8 +192,12 @@ async function loadTeams() {
 }
 
 async function loadMatches(teamSlug) {
-  const payload = await fetchJson(`/api/teams/${teamSlug}/matches`);
+  const [payload, style] = await Promise.all([
+    fetchJson(`/api/teams/${teamSlug}/matches`),
+    fetchJson(`/api/teams/${teamSlug}/style`),
+  ]);
   activeTeamEl.textContent = payload.team_name;
+  renderTeamStyle(style);
   matchesEl.innerHTML = payload.matches.length
     ? payload.matches.map(matchCard).join("")
     : `<article class="detail-card empty-state"><h3>No matches yet</h3><p>This team exists, but no matches are available in the current database.</p></article>`;

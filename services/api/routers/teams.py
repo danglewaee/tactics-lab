@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
-from schemas.team import MatchWindowResponse, TeamDetail, TeamSummary
-from services.editorial import get_team, list_team_matches, list_teams
+from schemas.team import MatchWindowResponse, TeamDetail, TeamStyleResponse, TeamSummary
+from services.editorial import get_team, get_team_style, list_team_matches, list_teams
 
 
 router = APIRouter(prefix="/teams", tags=["teams"])
@@ -27,3 +27,10 @@ def get_team_matches(team_slug: str) -> MatchWindowResponse:
         raise HTTPException(status_code=404, detail="Team not found.")
     return match_window
 
+
+@router.get("/{team_slug}/style", response_model=TeamStyleResponse)
+def get_team_style_profile(team_slug: str) -> TeamStyleResponse:
+    team_style = get_team_style(team_slug)
+    if team_style is None:
+        raise HTTPException(status_code=404, detail="Team not found.")
+    return team_style

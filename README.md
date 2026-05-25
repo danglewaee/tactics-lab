@@ -44,10 +44,12 @@ The first version answers questions like:
 
 This repository currently contains the project foundation:
 - MVP and product spec
+- a dedicated metric-definition spec so analytics rules stay explicit
 - folder ownership and architecture notes
 - initial relational schema for matches, events, lineups, metrics, and reports
 - a bootstrap `FastAPI` service
 - an ETL CLI skeleton with first metric helpers
+- a first historical aggregation layer for team style windows
 - a local `docker compose` stack for Postgres + API
 - a documented data-source strategy for event data, public stats, and tactical references
 
@@ -56,8 +58,9 @@ This repository currently contains the project foundation:
 1. Load one open dataset slice and validate the schema.
 2. Replace editorial placeholder responses with database-backed reads.
 3. Compute a first batch of team/match tactical metrics.
-4. Build the first `Match Page` and `Team Page`.
-5. Add auto-generated tactical takeaways.
+4. Aggregate those match metrics into team style windows.
+5. Build the first `Match Page` and `Team Page`.
+6. Add auto-generated tactical takeaways.
 
 ## Run The Bootstrap Stack
 
@@ -70,3 +73,4 @@ This repository currently contains the project foundation:
 Start with [docs/MVP_SPEC.md](/D:/CODE/Projects/Football/docs/MVP_SPEC.md) and [db/schema/001_init.sql](/D:/CODE/Projects/Football/db/schema/001_init.sql).
 
 Data-source decisions are documented in [docs/DATA_STRATEGY.md](/D:/CODE/Projects/Football/docs/DATA_STRATEGY.md).
+Metric definitions are documented in [docs/METRICS_SPEC.md](/D:/CODE/Projects/Football/docs/METRICS_SPEC.md).

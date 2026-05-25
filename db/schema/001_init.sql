@@ -192,6 +192,23 @@ create table player_match_metrics (
     unique (match_id, player_id, metric_key)
 );
 
+create table team_window_metrics (
+    team_window_metric_id bigserial primary key,
+    team_id bigint not null references teams(team_id),
+    competition_id bigint references competitions(competition_id),
+    season_id bigint references seasons(season_id),
+    window_type text not null check (window_type in ('all_matches', 'competition', 'season', 'competition_season')),
+    window_key text not null,
+    metric_key text not null,
+    metric_value numeric(14,4) not null,
+    match_count integer not null check (match_count > 0),
+    window_start_date date,
+    window_end_date date,
+    metric_context jsonb not null default '{}'::jsonb,
+    computed_at timestamptz not null default now(),
+    unique (team_id, window_type, window_key, metric_key)
+);
+
 create table tactical_reports (
     tactical_report_id bigserial primary key,
     scope_type text not null check (scope_type in ('match', 'team_window', 'comparison')),
@@ -214,6 +231,7 @@ create index idx_player_position_profiles_player on player_position_profiles (pl
 create index idx_player_position_profiles_external on player_position_profiles (provider_id, external_player_ref);
 create index idx_team_metrics_lookup on team_match_metrics (team_id, metric_key, match_id desc);
 create index idx_player_metrics_lookup on player_match_metrics (player_id, metric_key, match_id desc);
+create index idx_team_window_metrics_lookup on team_window_metrics (team_id, window_type, metric_key);
 create index idx_tactical_reports_scope on tactical_reports (scope_type, scope_key);
 
 insert into providers (code, name, base_reference)

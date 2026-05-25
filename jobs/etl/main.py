@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import json
 from pathlib import Path
 
 from config import get_settings
 from ingest.statsbomb import build_manifest, ingest_statsbomb_source, scan_statsbomb_source
+from metrics.pipeline import compute_metrics_for_all_matches
+from metrics.window_pipeline import compute_team_window_metrics
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,6 +27,17 @@ def build_parser() -> argparse.ArgumentParser:
     ingest_statsbomb.add_argument("--database-url", help="Postgres database URL.")
     ingest_statsbomb.add_argument("--limit-matches", type=int, default=None)
     ingest_statsbomb.add_argument("--dry-run", action="store_true", help="Only scan files; do not write to Postgres.")
+
+    compute_metrics = subparsers.add_parser("compute-team-metrics", help="Compute team match metrics from ingested events.")
+    compute_metrics.add_argument("--database-url", help="Postgres database URL.")
+    compute_metrics.add_argument("--limit-matches", type=int, default=None)
+
+    compute_team_windows = subparsers.add_parser(
+        "compute-team-window-metrics",
+        help="Aggregate team match metrics into historical team style windows.",
+    )
+    compute_team_windows.add_argument("--database-url", help="Postgres database URL.")
+    compute_team_windows.add_argument("--team-id", type=int, default=None)
 
     return parser
 
@@ -45,6 +59,7 @@ def main() -> int:
             "ingest_events",
             "ingest_manual_position_profiles",
             "compute_team_match_metrics",
+            "compute_team_window_metrics",
             "compute_player_match_metrics",
             "generate_tactical_report",
         ]
@@ -68,6 +83,22 @@ def main() -> int:
                 limit_matches=args.limit_matches,
             )
         print(json.dumps(summary.model_dump(), indent=2))
+        return 0
+
+    if args.command == "compute-team-metrics":
+        summary = compute_metrics_for_all_matches(
+            database_url=args.database_url or settings.database_url,
+            limit_matches=args.limit_matches,
+        )
+        print(json.dumps(asdict(summary), indent=2))
+        return 0
+
+    if args.command == "compute-team-window-metrics":
+        summary = compute_team_window_metrics(
+            database_url=args.database_url or settings.database_url,
+            team_id=args.team_id,
+        )
+        print(json.dumps(asdict(summary), indent=2))
         return 0
 
     parser.print_help()

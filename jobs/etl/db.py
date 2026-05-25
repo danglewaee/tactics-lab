@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
 @dataclass(slots=True)
 class Database:
     database_url: str
+    connection: Any = field(init=False, repr=False)
+    _jsonb: Any = field(init=False, repr=False)
 
     def __enter__(self) -> "Database":
         import psycopg

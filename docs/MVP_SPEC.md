@@ -77,6 +77,7 @@ Key blocks:
 - build-up profile
 - pressing profile
 - field tilt and territorial control
+- competition and season windows
 - progressive passing leaders
 - team tactical summary
 
@@ -108,40 +109,28 @@ Key blocks:
 
 The first release should include a small set of metrics that are explainable and visually meaningful.
 
-### Team metrics
-
-- `field_tilt`
-  share of final-third territory or actions controlled by a team
-
-- `build_up_lane_split`
-  percentage of early progression actions through left, center, and right lanes
-
+Current implemented team metrics:
 - `progressive_passes`
-  total and per-90 progressive passes
-
-- `verticality_index`
-  how directly possessions move toward goal
-
+- `build_up_lane_split`
+- `field_tilt`
 - `high_regains`
-  regains in the attacking third or high press zones
 
+Planned next team metrics:
+- `verticality_index`
 - `middle_regains`
-  regains in the middle third
-
 - `counterpress_regains`
-  regains shortly after losing possession
-
 - `pass_network_centrality`
-  identifies the possession hubs
 
-### Player metrics
-
+Planned player metrics:
 - progressive passes
 - progressive carries
 - receptions between lines
 - regains
 - pressures
 - network centrality
+
+Metric definitions and caveats:
+- see [METRICS_SPEC.md](/D:/CODE/Projects/Football/docs/METRICS_SPEC.md)
 
 ## 8. Insight Generation
 
@@ -220,6 +209,7 @@ The MVP should demonstrate:
 ### Milestone 3
 
 - ship team page and match page
+- compute historical team windows from match-level metrics
 
 ### Milestone 4
 

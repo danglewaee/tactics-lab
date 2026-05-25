@@ -157,6 +157,10 @@ h1 {
   gap: 14px;
 }
 
+.stack + .stack {
+  margin-top: 18px;
+}
+
 .card {
   position: relative;
   overflow: hidden;
@@ -241,6 +245,37 @@ h1 {
   margin: 0 0 18px;
 }
 
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 20px 0 24px;
+}
+
+.metric-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(32, 25, 20, 0.08);
+}
+
+.metric-card.compact {
+  padding: 12px 14px;
+}
+
+.metric-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metric-value {
+  font-size: 1.45rem;
+}
+
 .takeaway-list {
   display: grid;
   gap: 12px;
@@ -269,6 +304,45 @@ h1 {
   max-width: 36ch;
   margin: 0 auto;
   color: var(--muted);
+}
+
+.subsection-label {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.window-list {
+  display: grid;
+  gap: 12px;
+}
+
+.window-card {
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(244, 234, 224, 0.84));
+  border: 1px solid var(--line);
+}
+
+.window-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.window-title {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.window-meta {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 @media (max-width: 1180px) {
