@@ -50,6 +50,7 @@ This repository currently contains the project foundation:
 - a bootstrap `FastAPI` service
 - an ETL CLI skeleton with first metric helpers
 - a first historical aggregation layer for team style windows
+- a player-history metric layer for role profiling
 - a local `docker compose` stack for Postgres + API
 - a documented data-source strategy for event data, public stats, and tactical references
 
@@ -59,8 +60,9 @@ This repository currently contains the project foundation:
 2. Replace editorial placeholder responses with database-backed reads.
 3. Compute a first batch of team/match tactical metrics.
 4. Aggregate those match metrics into team style windows.
-5. Build the first `Match Page` and `Team Page`.
-6. Add auto-generated tactical takeaways.
+5. Compute player match and player window metrics.
+6. Build the first `Match Page` and `Team Page`.
+7. Add auto-generated tactical takeaways.
 
 ## Run The Bootstrap Stack
 

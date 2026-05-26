@@ -116,6 +116,23 @@ Examples:
 
 This table is the first historical aggregation layer above `team_match_metrics`.
 
+### `player_window_metrics`
+
+Stores one row per metric per player per historical window inside a specific team context.
+
+Initial window types:
+- `all_matches`
+- `competition`
+- `season`
+- `competition_season`
+
+Examples:
+- Bruno Fernandes profile across all ingested Manchester United matches
+- Bernardo Silva profile for Portugal tournament matches
+- a competition-specific winger profile inside the Champions League
+
+This table is the first player-history layer above `player_match_metrics`.
+
 ### `tactical_reports`
 
 Stores generated insight blocks for:
@@ -125,7 +142,7 @@ Stores generated insight blocks for:
 
 ## Why Metrics Are Stored Long-Form
 
-`team_match_metrics`, `player_match_metrics`, and `team_window_metrics` use `metric_key` + `metric_value` instead of wide fixed columns.
+`team_match_metrics`, `player_match_metrics`, `team_window_metrics`, and `player_window_metrics` use `metric_key` + `metric_value` instead of wide fixed columns.
 
 This keeps the MVP flexible because new tactical metrics will change often while you learn what is actually useful.
 
@@ -151,12 +168,21 @@ Window level:
 - `right_lane_build_up_share`
 
 Player level:
+- `minutes_played`
 - `progressive_passes`
 - `progressive_carries`
+- `passes_received`
 - `pressures`
 - `regains`
-- `network_centrality`
-- `receptions_between_lines`
+- `high_regains`
+
+Player window level:
+- `minutes_played`
+- `progressive_passes_per90`
+- `progressive_carries_per90`
+- `passes_received_per90`
+- `pressures_per90`
+- `high_regains_per90`
 
 ## Query Patterns The Schema Supports
 
@@ -164,6 +190,7 @@ Player level:
 - MU match event stream ordered by `index_in_match`
 - team tactical metrics for a selected match
 - team style profile aggregated across a season or competition
+- player role profile aggregated across a season or competition
 - player contribution leaders across a match sample
 - position frequency context for a selected player
 - generated tactical summary for a match page

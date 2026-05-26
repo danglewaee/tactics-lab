@@ -18,6 +18,8 @@ Two simple commands are available once Python dependencies are installed:
 - `python jobs/etl/main.py ingest-statsbomb --raw-dir data/raw/statsbomb --limit-matches 3`
 - `python jobs/etl/main.py compute-team-metrics --limit-matches 5`
 - `python jobs/etl/main.py compute-team-window-metrics`
+- `python jobs/etl/main.py compute-player-match-metrics`
+- `python jobs/etl/main.py compute-player-window-metrics`
 
 The initial implementation is intentionally light:
 - provider manifest definition
@@ -26,6 +28,7 @@ The initial implementation is intentionally light:
 - StatsBomb Open Data scan and ingest commands
 - team metric computation and tactical report generation from event data
 - team window aggregation from match-level metrics
+- player match metrics and player window aggregation for role profiles
 - first metric primitives for progressive passes and lane split
 - rule-based takeaway generation
 

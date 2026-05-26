@@ -122,12 +122,12 @@ Planned next team metrics:
 - `pass_network_centrality`
 
 Planned player metrics:
+- minutes played
 - progressive passes
 - progressive carries
-- receptions between lines
-- regains
+- passes received
+- high regains
 - pressures
-- network centrality
 
 Metric definitions and caveats:
 - see [METRICS_SPEC.md](/D:/CODE/Projects/Football/docs/METRICS_SPEC.md)

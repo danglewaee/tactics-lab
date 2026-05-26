@@ -8,6 +8,8 @@ from pathlib import Path
 from config import get_settings
 from ingest.statsbomb import build_manifest, ingest_statsbomb_source, scan_statsbomb_source
 from metrics.pipeline import compute_metrics_for_all_matches
+from metrics.player_pipeline import compute_player_metrics_for_all_matches
+from metrics.player_window_pipeline import compute_player_window_metrics
 from metrics.window_pipeline import compute_team_window_metrics
 
 
@@ -39,6 +41,21 @@ def build_parser() -> argparse.ArgumentParser:
     compute_team_windows.add_argument("--database-url", help="Postgres database URL.")
     compute_team_windows.add_argument("--team-id", type=int, default=None)
 
+    compute_player_metrics = subparsers.add_parser(
+        "compute-player-match-metrics",
+        help="Compute player match metrics from ingested events and lineups.",
+    )
+    compute_player_metrics.add_argument("--database-url", help="Postgres database URL.")
+    compute_player_metrics.add_argument("--limit-matches", type=int, default=None)
+
+    compute_player_windows = subparsers.add_parser(
+        "compute-player-window-metrics",
+        help="Aggregate player match metrics into historical player role windows.",
+    )
+    compute_player_windows.add_argument("--database-url", help="Postgres database URL.")
+    compute_player_windows.add_argument("--player-id", type=int, default=None)
+    compute_player_windows.add_argument("--team-id", type=int, default=None)
+
     return parser
 
 
@@ -61,6 +78,7 @@ def main() -> int:
             "compute_team_match_metrics",
             "compute_team_window_metrics",
             "compute_player_match_metrics",
+            "compute_player_window_metrics",
             "generate_tactical_report",
         ]
         print(json.dumps({"provider": settings.provider_code, "tasks": plan}, indent=2))
@@ -96,6 +114,23 @@ def main() -> int:
     if args.command == "compute-team-window-metrics":
         summary = compute_team_window_metrics(
             database_url=args.database_url or settings.database_url,
+            team_id=args.team_id,
+        )
+        print(json.dumps(asdict(summary), indent=2))
+        return 0
+
+    if args.command == "compute-player-match-metrics":
+        summary = compute_player_metrics_for_all_matches(
+            database_url=args.database_url or settings.database_url,
+            limit_matches=args.limit_matches,
+        )
+        print(json.dumps(asdict(summary), indent=2))
+        return 0
+
+    if args.command == "compute-player-window-metrics":
+        summary = compute_player_window_metrics(
+            database_url=args.database_url or settings.database_url,
+            player_id=args.player_id,
             team_id=args.team_id,
         )
         print(json.dumps(asdict(summary), indent=2))
