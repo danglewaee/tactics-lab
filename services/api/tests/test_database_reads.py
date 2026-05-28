@@ -8,7 +8,15 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from schemas.match import MetricValue
-from services.editorial import _match_card_from_row, _resolve_team_type, get_match_detail, get_team, get_team_style, list_teams
+from services.editorial import (
+    _match_card_from_row,
+    _resolve_team_type,
+    get_match_detail,
+    get_team,
+    get_team_players,
+    get_team_style,
+    list_teams,
+)
 
 
 class DatabaseReadTests(unittest.TestCase):
@@ -182,6 +190,142 @@ class DatabaseReadTests(unittest.TestCase):
         self.assertEqual(len(response.windows), 1)
         self.assertEqual(response.windows[0].label, "All ingested matches")
         self.assertEqual(response.windows[0].metrics[0].label, "Field tilt")
+
+    def test_get_team_players_uses_player_window_metrics(self) -> None:
+        team_row = {
+            "team_id": 1,
+            "external_id": "1",
+            "name": "Manchester United",
+            "short_name": "MU",
+            "country_name": "England",
+            "team_type": None,
+            "match_count": 3,
+        }
+        window_row = {
+            "window_type": "all_matches",
+            "match_count": 3,
+            "window_start_date": "2024-01-01",
+            "window_end_date": "2024-01-30",
+            "competition_id": None,
+            "season_id": None,
+            "competition_name": None,
+            "season_name": None,
+        }
+        player_rows = [
+            {
+                "player_id": 10,
+                "team_id": 1,
+                "name": "Bruno Fernandes",
+                "display_name": "Bruno",
+                "primary_position": "Attacking Midfield",
+                "position_group": "midfielder",
+                "match_count": 3,
+                "minutes_played_total": 280,
+                "metric_key": "progressive_passes_per90",
+                "metric_value": 6.5,
+            },
+            {
+                "player_id": 10,
+                "team_id": 1,
+                "name": "Bruno Fernandes",
+                "display_name": "Bruno",
+                "primary_position": "Attacking Midfield",
+                "position_group": "midfielder",
+                "match_count": 3,
+                "minutes_played_total": 280,
+                "metric_key": "pressures_per90",
+                "metric_value": 18.0,
+            },
+            {
+                "player_id": 11,
+                "team_id": 1,
+                "name": "Short Sample",
+                "display_name": None,
+                "primary_position": "Forward",
+                "position_group": "forward",
+                "match_count": 1,
+                "minutes_played_total": 40,
+                "metric_key": "progressive_passes_per90",
+                "metric_value": 2.0,
+            },
+        ]
+
+        with patch("services.editorial._load_team_row_by_slug", return_value=team_row), patch(
+            "services.editorial._load_team_players_window_meta", return_value=window_row
+        ), patch(
+            "services.editorial._load_team_players_for_window"
+        ) as players_mock:
+            players_mock.return_value = []
+            response = get_team_players("manchester-united")
+
+        self.assertIsNotNone(response)
+        self.assertEqual(response.window.qualification_minutes, 270)
+        players_mock.assert_called_once_with(
+            1,
+            window_type="all_matches",
+            competition_id=None,
+            season_id=None,
+            qualification_minutes=270,
+            qualified_only=True,
+        )
+
+        with patch("services.editorial._load_team_row_by_slug", return_value=team_row), patch(
+            "services.editorial._load_team_players_window_meta", return_value=window_row
+        ), patch(
+            "services.editorial._query_rows_safe", return_value=player_rows
+        ):
+            response = get_team_players("manchester-united")
+
+        self.assertEqual(len(response.players), 1)
+        self.assertEqual(response.players[0].name, "Bruno Fernandes")
+        self.assertTrue(response.players[0].qualified)
+        self.assertEqual(response.players[0].metrics[0].label, "Progressive passes / 90")
+
+    def test_get_team_players_relaxes_threshold_for_small_windows(self) -> None:
+        team_row = {
+            "team_id": 1,
+            "external_id": "1",
+            "name": "Manchester United",
+            "short_name": "MU",
+            "country_name": "England",
+            "team_type": None,
+            "match_count": 2,
+        }
+        window_row = {
+            "window_type": "competition",
+            "match_count": 2,
+            "window_start_date": "2024-01-01",
+            "window_end_date": "2024-01-10",
+            "competition_id": 39,
+            "season_id": None,
+            "competition_name": "Premier League",
+            "season_name": None,
+        }
+        player_rows = [
+            {
+                "player_id": 10,
+                "team_id": 1,
+                "name": "Bruno Fernandes",
+                "display_name": "Bruno",
+                "primary_position": "Attacking Midfield",
+                "position_group": "midfielder",
+                "match_count": 2,
+                "minutes_played_total": 75,
+                "metric_key": "progressive_passes_per90",
+                "metric_value": 6.5,
+            }
+        ]
+
+        with patch("services.editorial._load_team_row_by_slug", return_value=team_row), patch(
+            "services.editorial._load_team_players_window_meta", return_value=window_row
+        ), patch(
+            "services.editorial._query_rows_safe", return_value=player_rows
+        ):
+            response = get_team_players("manchester-united", competition_id=39)
+
+        self.assertEqual(response.window.qualification_minutes, 60)
+        self.assertEqual(len(response.players), 1)
+        self.assertTrue(response.players[0].qualified)
 
 
 if __name__ == "__main__":

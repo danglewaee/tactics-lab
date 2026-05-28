@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 from schemas.match import MatchCard, MatchDetail, MatchNetwork, MatchReportBundle, MetricValue, TacticalTakeaway
+from schemas.player import PlayerRoleCard, TeamPlayersResponse, TeamPlayersWindow
 from schemas.team import MatchWindowResponse, TeamDetail, TeamStyleResponse, TeamStyleWindow, TeamSummary
 from services.database import DatabaseUnavailableError, query_all, query_one
 
@@ -16,6 +17,13 @@ DEFAULT_TARGET_METRICS = [
     "center_lane_build_up_share",
     "right_lane_build_up_share",
     "high_regains",
+]
+DEFAULT_PLAYER_TARGET_METRICS = [
+    "progressive_passes_per90",
+    "progressive_carries_per90",
+    "passes_received_per90",
+    "pressures_per90",
+    "high_regains_per90",
 ]
 DEFAULT_CHART_BLOCKS = [
     "pass_network",
@@ -30,6 +38,13 @@ METRIC_LABELS = {
     "center_lane_build_up_share": "Center build-up share",
     "right_lane_build_up_share": "Right build-up share",
     "high_regains": "High regains",
+}
+PLAYER_METRIC_LABELS = {
+    "progressive_passes_per90": "Progressive passes / 90",
+    "progressive_carries_per90": "Progressive carries / 90",
+    "passes_received_per90": "Passes received / 90",
+    "pressures_per90": "Pressures / 90",
+    "high_regains_per90": "High regains / 90",
 }
 
 
@@ -223,6 +238,69 @@ def get_team_style(team_slug: str) -> TeamStyleResponse | None:
         team_name=row["name"],
         data_status="partial" if _team_has_events(team_id) else "pending_ingestion",
         windows=[],
+    )
+
+
+def get_team_players(
+    team_slug: str,
+    competition_id: int | None = None,
+    season_id: int | None = None,
+    qualified_only: bool = True,
+) -> TeamPlayersResponse | None:
+    row = _load_team_row_by_slug(team_slug)
+    if row is None:
+        editorial = EDITORIAL_TEAMS.get(team_slug)
+        if editorial is None:
+            return None
+        return TeamPlayersResponse(
+            team_slug=team_slug,
+            team_name=editorial.name,
+            data_status="partial",
+            window=None,
+            players=[],
+        )
+
+    team_id = int(row["team_id"])
+    window_type = _resolve_player_window_type(competition_id=competition_id, season_id=season_id)
+    window_meta = _load_team_players_window_meta(
+        team_id,
+        window_type=window_type,
+        competition_id=competition_id,
+        season_id=season_id,
+    )
+    if window_meta is None:
+        return TeamPlayersResponse(
+            team_slug=team_slug,
+            team_name=row["name"],
+            data_status="partial" if _team_has_events(team_id) else "pending_ingestion",
+            window=None,
+            players=[],
+        )
+
+    qualification_minutes = _qualification_minutes_for_window(int(window_meta["match_count"]))
+    players = _load_team_players_for_window(
+        team_id,
+        window_type=window_type,
+        competition_id=competition_id,
+        season_id=season_id,
+        qualification_minutes=qualification_minutes,
+        qualified_only=qualified_only,
+    )
+
+    return TeamPlayersResponse(
+        team_slug=team_slug,
+        team_name=row["name"],
+        data_status="ready",
+        window=TeamPlayersWindow(
+            window_type=window_type,
+            label=_team_style_window_label(window_meta),
+            competition_id=competition_id,
+            season_id=season_id,
+            match_count=int(window_meta["match_count"]),
+            date_range_label=_date_range_label(window_meta.get("window_start_date"), window_meta.get("window_end_date")),
+            qualification_minutes=qualification_minutes,
+        ),
+        players=players,
     )
 
 
@@ -509,6 +587,123 @@ def _load_team_style_windows(team_id: int) -> list[TeamStyleWindow]:
     return windows
 
 
+def _load_team_players_window_meta(
+    team_id: int,
+    window_type: str,
+    competition_id: int | None,
+    season_id: int | None,
+) -> dict[str, Any] | None:
+    sql = """
+        select
+            tw.window_type,
+            tw.match_count,
+            tw.window_start_date,
+            tw.window_end_date,
+            tw.competition_id,
+            tw.season_id,
+            c.name as competition_name,
+            s.name as season_name
+        from team_window_metrics tw
+        left join competitions c on c.competition_id = tw.competition_id
+        left join seasons s on s.season_id = tw.season_id
+        where tw.team_id = %s
+          and tw.window_type = %s
+    """
+    params: list[Any] = [team_id, window_type]
+    if competition_id is None:
+        sql += " and tw.competition_id is null"
+    else:
+        sql += " and tw.competition_id = %s"
+        params.append(competition_id)
+    if season_id is None:
+        sql += " and tw.season_id is null"
+    else:
+        sql += " and tw.season_id = %s"
+        params.append(season_id)
+    sql += " limit 1"
+    return _query_row_safe(sql, tuple(params))
+
+
+def _load_team_players_for_window(
+    team_id: int,
+    window_type: str,
+    competition_id: int | None,
+    season_id: int | None,
+    qualification_minutes: int,
+    qualified_only: bool,
+) -> list[PlayerRoleCard]:
+    sql = """
+        select
+            pwm.player_id,
+            pwm.team_id,
+            p.name,
+            p.display_name,
+            p.primary_position,
+            p.position_group,
+            pwm.match_count,
+            pwm.minutes_played_total,
+            pwm.metric_key,
+            pwm.metric_value
+        from player_window_metrics pwm
+        join players p on p.player_id = pwm.player_id
+        where pwm.team_id = %s
+          and pwm.window_type = %s
+    """
+    params: list[Any] = [team_id, window_type]
+    if competition_id is None:
+        sql += " and pwm.competition_id is null"
+    else:
+        sql += " and pwm.competition_id = %s"
+        params.append(competition_id)
+    if season_id is None:
+        sql += " and pwm.season_id is null"
+    else:
+        sql += " and pwm.season_id = %s"
+        params.append(season_id)
+    sql += """
+        order by
+            pwm.minutes_played_total desc,
+            lower(p.name),
+            pwm.metric_key
+    """
+    rows = _query_rows_safe(sql, tuple(params))
+
+    players: list[PlayerRoleCard] = []
+    by_player_id: dict[int, PlayerRoleCard] = {}
+    for row in rows:
+        metric_key = row.get("metric_key")
+        if metric_key not in PLAYER_METRIC_LABELS and metric_key != "minutes_played":
+            continue
+
+        player_id = int(row["player_id"])
+        player = by_player_id.get(player_id)
+        if player is None:
+            minutes_played_total = int(float(row["minutes_played_total"]))
+            match_count = int(row["match_count"])
+            qualified = minutes_played_total >= qualification_minutes
+            if qualified_only and not qualified:
+                continue
+
+            player = PlayerRoleCard(
+                player_id=player_id,
+                name=row["name"],
+                display_name=row.get("display_name"),
+                primary_position=row.get("primary_position"),
+                position_group=row.get("position_group"),
+                minutes_played_total=minutes_played_total,
+                match_count=match_count,
+                qualified=qualified,
+                metrics=[],
+            )
+            by_player_id[player_id] = player
+            players.append(player)
+
+        if metric_key in PLAYER_METRIC_LABELS:
+            player.metrics.append(_player_metric_value_from_row(row))
+
+    return players
+
+
 def _subject_team_for_match(match_row: dict[str, Any]) -> tuple[str, str]:
     home_slug = _slugify(match_row["home_team_name"])
     away_slug = _slugify(match_row["away_team_name"])
@@ -559,9 +754,28 @@ def _metric_value_from_row(row: dict[str, Any]) -> MetricValue:
     )
 
 
+def _player_metric_value_from_row(row: dict[str, Any]) -> MetricValue:
+    key = str(row["metric_key"])
+    value = float(row["metric_value"])
+    return MetricValue(
+        key=key,
+        label=PLAYER_METRIC_LABELS.get(key, key.replace("_", " ").title()),
+        value=value,
+        display_value=_format_player_metric_value(key, value),
+    )
+
+
 def _format_metric_value(key: str, value: float) -> str:
     if key.endswith("_share") or key == "field_tilt":
         return f"{value * 100:.1f}%"
+    if value.is_integer():
+        return str(int(value))
+    return f"{value:.2f}"
+
+
+def _format_player_metric_value(key: str, value: float) -> str:
+    if key.endswith("_per90"):
+        return f"{value:.2f}"
     if value.is_integer():
         return str(int(value))
     return f"{value:.2f}"
@@ -595,6 +809,20 @@ def _date_range_label(start_date: Any, end_date: Any) -> str | None:
     if start_date and end_date:
         return f"{start_date} to {end_date}"
     return str(start_date or end_date)
+
+
+def _resolve_player_window_type(competition_id: int | None, season_id: int | None) -> str:
+    if competition_id is not None and season_id is not None:
+        return "competition_season"
+    if competition_id is not None:
+        return "competition"
+    if season_id is not None:
+        return "season"
+    return "all_matches"
+
+
+def _qualification_minutes_for_window(match_count: int) -> int:
+    return 60 if match_count < 3 else 270
 
 
 def _slugify(value: str) -> str:
