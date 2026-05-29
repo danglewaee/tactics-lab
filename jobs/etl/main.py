@@ -14,11 +14,11 @@ from metrics.window_pipeline import compute_team_window_metrics
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Bootstrap CLI for Tactics Lab ETL jobs.")
+    parser = argparse.ArgumentParser(description="Bootstrap CLI.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     subparsers.add_parser("manifest", help="Print the provider manifest used for local ingestion.")
-    subparsers.add_parser("plan", help="Print the first ETL tasks in execution order.")
+    subparsers.add_parser("plan", help="First ETL tasks.")
 
     scan_statsbomb = subparsers.add_parser("scan-statsbomb", help="Scan local StatsBomb Open Data files.")
     scan_statsbomb.add_argument("--raw-dir", help="Path to a StatsBomb open-data checkout or data folder.")
