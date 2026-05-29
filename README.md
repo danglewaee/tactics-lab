@@ -71,6 +71,7 @@ This repository currently contains the project foundation:
 3. Install API dependencies from `services/api/requirements.txt`.
 4. Run the API with `uvicorn app.main:app --app-dir services/api --reload`.
 5. Inspect the ETL bootstrap plan with `python jobs/etl/main.py plan`.
+6. Ingest a focused dataset slice with `python jobs/etl/main.py ingest-statsbomb --raw-dir data/raw/statsbomb --team "Manchester United" --team "Portugal"`.
 
 Start with [docs/MVP_SPEC.md](/D:/CODE/Projects/Football/docs/MVP_SPEC.md) and [db/schema/001_init.sql](/D:/CODE/Projects/Football/db/schema/001_init.sql).
 

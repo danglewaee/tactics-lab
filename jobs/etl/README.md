@@ -15,7 +15,9 @@ Two simple commands are available once Python dependencies are installed:
 - `python jobs/etl/main.py manifest`
 - `python jobs/etl/main.py plan`
 - `python jobs/etl/main.py scan-statsbomb --raw-dir data/raw/statsbomb`
+- `python jobs/etl/main.py scan-statsbomb --raw-dir data/raw/statsbomb --team "Manchester United" --team "Portugal"`
 - `python jobs/etl/main.py ingest-statsbomb --raw-dir data/raw/statsbomb --limit-matches 3`
+- `python jobs/etl/main.py ingest-statsbomb --raw-dir data/raw/statsbomb --team "Manchester United" --team "Portugal"`
 - `python jobs/etl/main.py compute-team-metrics --limit-matches 5`
 - `python jobs/etl/main.py compute-team-window-metrics`
 - `python jobs/etl/main.py compute-player-match-metrics`

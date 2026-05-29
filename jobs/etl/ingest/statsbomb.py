@@ -43,6 +43,19 @@ class IngestionSummary(BaseModel):
     files: dict[str, int] = Field(default_factory=dict)
 
 
+def normalize_team_filters(team_names: Iterable[str] | None) -> set[str]:
+    if team_names is None:
+        return set()
+    normalized: set[str] = set()
+    for team_name in team_names:
+        if not isinstance(team_name, str):
+            continue
+        value = team_name.strip().casefold()
+        if value:
+            normalized.add(value)
+    return normalized
+
+
 @dataclass(slots=True)
 class StatsBombDataSource:
     raw_dir: Path
@@ -102,10 +115,29 @@ def read_json_list(path: Path) -> list[dict[str, Any]]:
     return payload
 
 
-def scan_statsbomb_source(raw_dir: str | Path, limit_matches: int | None = None) -> IngestionSummary:
+def match_includes_team(match: dict[str, Any], team_filters: set[str]) -> bool:
+    if not team_filters:
+        return True
+
+    for team_payload, prefix in (
+        (match.get("home_team"), "home_team"),
+        (match.get("away_team"), "away_team"),
+    ):
+        team_name = entity_name(team_payload, prefix)
+        if isinstance(team_name, str) and team_name.strip().casefold() in team_filters:
+            return True
+    return False
+
+
+def scan_statsbomb_source(
+    raw_dir: str | Path,
+    limit_matches: int | None = None,
+    team_names: Iterable[str] | None = None,
+) -> IngestionSummary:
     source = StatsBombDataSource(Path(raw_dir))
     data_root = source.data_root
     summary = IngestionSummary(source_root=str(data_root))
+    team_filters = normalize_team_filters(team_names)
 
     competitions = source.read_competitions()
     summary.competitions = len({item.get("competition_id") for item in competitions})
@@ -118,6 +150,8 @@ def scan_statsbomb_source(raw_dir: str | Path, limit_matches: int | None = None)
     for match_file in source.iter_match_files():
         match_files += 1
         for match in read_json_list(match_file):
+            if not match_includes_team(match, team_filters):
+                continue
             if limit_matches is not None and match_records >= limit_matches:
                 break
             match_records += 1
@@ -155,9 +189,11 @@ def ingest_statsbomb_source(
     raw_dir: str | Path,
     database_url: str,
     limit_matches: int | None = None,
+    team_names: Iterable[str] | None = None,
 ) -> IngestionSummary:
     source = StatsBombDataSource(Path(raw_dir))
     summary = IngestionSummary(source_root=str(source.data_root))
+    team_filters = normalize_team_filters(team_names)
 
     with Database(database_url) as database:
         writer = StatsBombWriter(database)
@@ -176,6 +212,8 @@ def ingest_statsbomb_source(
         for match_file in source.iter_match_files():
             match_files += 1
             for match in read_json_list(match_file):
+                if not match_includes_team(match, team_filters):
+                    continue
                 if limit_matches is not None and match_records >= limit_matches:
                     break
                 match_id = writer.upsert_match(match)
