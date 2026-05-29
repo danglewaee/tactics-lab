@@ -46,6 +46,10 @@ PLAYER_METRIC_LABELS = {
     "pressures_per90": "Pressures / 90",
     "high_regains_per90": "High regains / 90",
 }
+EDITORIAL_TEAM_EXTERNAL_IDS = {
+    "manchester-united": "39",
+    "portugal": "780",
+}
 
 
 EDITORIAL_TEAMS: dict[str, TeamDetail] = {
@@ -163,7 +167,24 @@ def list_teams() -> list[TeamSummary]:
         """
     )
     if rows:
-        return [_team_summary_from_row(row) for row in rows]
+        selected_rows: list[dict[str, Any]] = []
+        grouped_rows: dict[str, list[dict[str, Any]]] = {}
+        ordered_slugs: list[str] = []
+        for row in rows:
+            slug = _slugify(row["name"])
+            if slug not in grouped_rows:
+                grouped_rows[slug] = []
+                ordered_slugs.append(slug)
+            grouped_rows[slug].append(row)
+
+        for slug in ordered_slugs:
+            candidates = grouped_rows[slug]
+            if slug in EDITORIAL_TEAM_EXTERNAL_IDS:
+                selected_rows.append(_select_team_row_for_slug(candidates, slug))
+                continue
+            selected_rows.extend(candidates)
+
+        return [_team_summary_from_row(row) for row in selected_rows]
     return [TeamSummary(**team.model_dump()) for team in EDITORIAL_TEAMS.values()]
 
 
@@ -425,6 +446,7 @@ def _match_card_from_row(match_row: dict[str, Any], subject_team_slug: str, subj
 
 
 def _load_team_row_by_slug(team_slug: str) -> dict[str, Any] | None:
+    matching_rows: list[dict[str, Any]] = []
     for row in _query_rows_safe(
         """
         select
@@ -442,8 +464,10 @@ def _load_team_row_by_slug(team_slug: str) -> dict[str, Any] | None:
         """
     ):
         if _slugify(row["name"]) == team_slug:
-            return row
-    return None
+            matching_rows.append(row)
+    if not matching_rows:
+        return None
+    return _select_team_row_for_slug(matching_rows, team_slug)
 
 
 def _team_has_events(team_id: int) -> bool:
@@ -823,6 +847,22 @@ def _resolve_player_window_type(competition_id: int | None, season_id: int | Non
 
 def _qualification_minutes_for_window(match_count: int) -> int:
     return 60 if match_count < 3 else 270
+
+
+def _select_team_row_for_slug(rows: list[dict[str, Any]], team_slug: str) -> dict[str, Any]:
+    preferred_external_id = EDITORIAL_TEAM_EXTERNAL_IDS.get(team_slug)
+    if preferred_external_id is not None:
+        for row in rows:
+            if str(row.get("external_id")) == preferred_external_id:
+                return row
+
+    return sorted(
+        rows,
+        key=lambda row: (
+            -int(row.get("match_count") or 0),
+            int(row.get("team_id") or 0),
+        ),
+    )[0]
 
 
 def _slugify(value: str) -> str:

@@ -11,6 +11,7 @@ from schemas.match import MetricValue
 from services.editorial import (
     _match_card_from_row,
     _resolve_team_type,
+    _select_team_row_for_slug,
     get_match_detail,
     get_team,
     get_team_players,
@@ -62,6 +63,33 @@ class DatabaseReadTests(unittest.TestCase):
         self.assertEqual(team.team_type, "national_team")
         self.assertEqual(team.data_status, "ready")
         self.assertIn("counterpress_regains", team.target_metrics)
+
+    def test_select_team_row_for_slug_prefers_editorial_external_id(self) -> None:
+        rows = [
+            {
+                "team_id": 77,
+                "external_id": "1475",
+                "name": "Manchester United",
+                "short_name": "MUW",
+                "country_name": "England",
+                "team_type": None,
+                "match_count": 36,
+            },
+            {
+                "team_id": 55,
+                "external_id": "39",
+                "name": "Manchester United",
+                "short_name": "MU",
+                "country_name": "England",
+                "team_type": None,
+                "match_count": 43,
+            },
+        ]
+
+        selected = _select_team_row_for_slug(rows, "manchester-united")
+
+        self.assertEqual(selected["team_id"], 55)
+        self.assertEqual(selected["external_id"], "39")
 
     def test_match_card_marks_event_backed_matches_ready(self) -> None:
         card = _match_card_from_row(
