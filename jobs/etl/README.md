@@ -23,6 +23,18 @@ Two simple commands are available once Python dependencies are installed:
 - `python jobs/etl/main.py compute-player-match-metrics`
 - `python jobs/etl/main.py compute-player-window-metrics`
 
+## Focused Backfill Order
+
+Use this order for the Manchester United + Portugal slice:
+
+1. `python jobs/etl/main.py ingest-statsbomb --raw-dir data/raw/statsbomb --team "Manchester United" --team Portugal`
+2. `python jobs/etl/main.py compute-team-metrics`
+3. `python jobs/etl/main.py compute-team-window-metrics`
+4. `python jobs/etl/main.py compute-player-match-metrics`
+5. `python jobs/etl/main.py compute-player-window-metrics`
+
+Do not run the player jobs in parallel. `compute-player-window-metrics` reads from `player_match_metrics`, so it should only start after the match-level write is complete.
+
 The initial implementation is intentionally light:
 - provider manifest definition
 - event normalization helpers

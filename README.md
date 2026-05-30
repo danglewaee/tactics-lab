@@ -73,6 +73,18 @@ This repository currently contains the project foundation:
 5. Inspect the ETL bootstrap plan with `python jobs/etl/main.py plan`.
 6. Ingest a focused dataset slice with `python jobs/etl/main.py ingest-statsbomb --raw-dir data/raw/statsbomb --team "Manchester United" --team "Portugal"`.
 
+## MU + Portugal Backfill
+
+Run the focused backfill in this order:
+
+1. `python jobs/etl/main.py ingest-statsbomb --raw-dir data/raw/statsbomb --team "Manchester United" --team Portugal`
+2. `python jobs/etl/main.py compute-team-metrics`
+3. `python jobs/etl/main.py compute-team-window-metrics`
+4. `python jobs/etl/main.py compute-player-match-metrics`
+5. `python jobs/etl/main.py compute-player-window-metrics`
+
+Keep these jobs sequential. `compute-player-window-metrics` should run only after `compute-player-match-metrics` finishes writing, otherwise the window layer can read an incomplete slice.
+
 Start with [docs/MVP_SPEC.md](/D:/CODE/Projects/Football/docs/MVP_SPEC.md) and [db/schema/001_init.sql](/D:/CODE/Projects/Football/db/schema/001_init.sql).
 
 Data-source decisions are documented in [docs/DATA_STRATEGY.md](/D:/CODE/Projects/Football/docs/DATA_STRATEGY.md).
