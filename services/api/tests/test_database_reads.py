@@ -42,6 +42,43 @@ class DatabaseReadTests(unittest.TestCase):
         self.assertTrue(teams[0].editorial_focus)
         self.assertEqual(teams[0].team_type, "club")
 
+    def test_list_teams_deduplicates_editorial_slug_variants(self) -> None:
+        rows = [
+            {
+                "team_id": 77,
+                "external_id": "1475",
+                "name": "Manchester United",
+                "short_name": "MUW",
+                "country_name": "England",
+                "team_type": None,
+                "match_count": 36,
+            },
+            {
+                "team_id": 55,
+                "external_id": "39",
+                "name": "Manchester United",
+                "short_name": "MU",
+                "country_name": "England",
+                "team_type": None,
+                "match_count": 43,
+            },
+            {
+                "team_id": 90,
+                "external_id": "780",
+                "name": "Portugal",
+                "short_name": "POR",
+                "country_name": "Portugal",
+                "team_type": None,
+                "match_count": 18,
+            },
+        ]
+
+        with patch("services.editorial._query_rows_safe", return_value=rows):
+            teams = list_teams()
+
+        self.assertEqual([team.team_slug for team in teams], ["manchester-united", "portugal"])
+        self.assertEqual(teams[0].short_name, "MU")
+
     def test_get_team_uses_database_row_and_editorial_metadata(self) -> None:
         row = {
             "team_id": 1,
