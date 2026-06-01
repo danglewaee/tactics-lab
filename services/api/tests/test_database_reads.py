@@ -78,6 +78,7 @@ class DatabaseReadTests(unittest.TestCase):
 
         self.assertEqual([team.team_slug for team in teams], ["manchester-united", "portugal"])
         self.assertEqual(teams[0].short_name, "MU")
+        self.assertEqual(teams[1].team_type, "national_team")
 
     def test_get_team_uses_database_row_and_editorial_metadata(self) -> None:
         row = {
