@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from schemas.match import MetricValue
 from services.editorial import (
     _match_card_from_row,
+    _qualification_minutes_for_window,
     _resolve_team_type,
     _select_team_row_for_slug,
     get_match_detail,
@@ -210,6 +211,11 @@ class DatabaseReadTests(unittest.TestCase):
         )
 
         self.assertEqual(team_type, "national_team")
+
+    def test_qualification_minutes_switches_at_three_matches(self) -> None:
+        self.assertEqual(_qualification_minutes_for_window(0), 60)
+        self.assertEqual(_qualification_minutes_for_window(2), 60)
+        self.assertEqual(_qualification_minutes_for_window(3), 270)
 
     def test_get_team_style_uses_window_metrics(self) -> None:
         team_row = {
