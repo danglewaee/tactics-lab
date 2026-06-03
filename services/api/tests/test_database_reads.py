@@ -130,6 +130,33 @@ class DatabaseReadTests(unittest.TestCase):
         self.assertEqual(selected["team_id"], 55)
         self.assertEqual(selected["external_id"], "39")
 
+    def test_select_team_row_for_slug_falls_back_to_highest_match_count(self) -> None:
+        rows = [
+            {
+                "team_id": 11,
+                "external_id": "501",
+                "name": "Valencia",
+                "short_name": "VAL B",
+                "country_name": "Spain",
+                "team_type": None,
+                "match_count": 7,
+            },
+            {
+                "team_id": 10,
+                "external_id": "500",
+                "name": "Valencia",
+                "short_name": "VAL",
+                "country_name": "Spain",
+                "team_type": None,
+                "match_count": 12,
+            },
+        ]
+
+        selected = _select_team_row_for_slug(rows, "valencia")
+
+        self.assertEqual(selected["team_id"], 10)
+        self.assertEqual(selected["external_id"], "500")
+
     def test_match_card_marks_event_backed_matches_ready(self) -> None:
         card = _match_card_from_row(
             {
