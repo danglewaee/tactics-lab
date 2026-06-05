@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from schemas.match import MetricValue
 from services.editorial import (
+    _date_range_label,
     _match_card_from_row,
     _qualification_minutes_for_window,
     _resolve_team_type,
@@ -270,6 +271,11 @@ class DatabaseReadTests(unittest.TestCase):
         self.assertEqual(_qualification_minutes_for_window(0), 60)
         self.assertEqual(_qualification_minutes_for_window(2), 60)
         self.assertEqual(_qualification_minutes_for_window(3), 270)
+
+    def test_date_range_label_formats_full_and_partial_ranges(self) -> None:
+        self.assertEqual(_date_range_label("2024-01-01", "2024-01-30"), "2024-01-01 to 2024-01-30")
+        self.assertEqual(_date_range_label("2024-01-01", None), "2024-01-01")
+        self.assertIsNone(_date_range_label(None, None))
 
     def test_get_team_style_uses_window_metrics(self) -> None:
         team_row = {
