@@ -14,6 +14,7 @@ from services.editorial import (
     _qualification_minutes_for_window,
     _resolve_team_type,
     _select_team_row_for_slug,
+    _team_style_window_label,
     get_match_detail,
     get_team,
     get_team_players,
@@ -276,6 +277,13 @@ class DatabaseReadTests(unittest.TestCase):
         self.assertEqual(_date_range_label("2024-01-01", "2024-01-30"), "2024-01-01 to 2024-01-30")
         self.assertEqual(_date_range_label("2024-01-01", None), "2024-01-01")
         self.assertIsNone(_date_range_label(None, None))
+
+    def test_team_style_window_label_handles_all_matches_and_competition(self) -> None:
+        self.assertEqual(_team_style_window_label({"window_type": "all_matches"}), "All ingested matches")
+        self.assertEqual(
+            _team_style_window_label({"window_type": "competition", "competition_name": "Premier League"}),
+            "Premier League",
+        )
 
     def test_get_team_style_uses_window_metrics(self) -> None:
         team_row = {
