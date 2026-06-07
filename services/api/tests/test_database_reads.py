@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from schemas.match import MetricValue
 from services.editorial import (
     _date_range_label,
+    _focus_areas_for_slug,
     _match_card_from_row,
     _qualification_minutes_for_window,
     _resolve_team_type,
@@ -283,6 +284,12 @@ class DatabaseReadTests(unittest.TestCase):
         self.assertEqual(
             _team_style_window_label({"window_type": "competition", "competition_name": "Premier League"}),
             "Premier League",
+        )
+
+    def test_focus_areas_for_slug_falls_back_to_defaults(self) -> None:
+        self.assertEqual(
+            _focus_areas_for_slug("unknown-team"),
+            ["build-up structure", "pressing behavior", "territorial control"],
         )
 
     def test_get_team_style_uses_window_metrics(self) -> None:
