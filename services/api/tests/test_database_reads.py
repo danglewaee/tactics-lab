@@ -15,6 +15,7 @@ from services.editorial import (
     _qualification_minutes_for_window,
     _resolve_team_type,
     _select_team_row_for_slug,
+    _subject_team_for_match,
     _team_style_window_label,
     get_match_detail,
     get_team,
@@ -204,6 +205,17 @@ class DatabaseReadTests(unittest.TestCase):
         self.assertEqual(card.match_id, "12")
         self.assertEqual(card.title, "Manchester United 2-1 Portugal")
         self.assertEqual(card.data_status, "ready")
+
+    def test_subject_team_for_match_prefers_editorial_away_team(self) -> None:
+        subject_slug, subject_name = _subject_team_for_match(
+            {
+                "home_team_name": "Valencia",
+                "away_team_name": "Portugal",
+            }
+        )
+
+        self.assertEqual(subject_slug, "portugal")
+        self.assertEqual(subject_name, "Portugal")
 
     def test_get_match_detail_uses_database_match(self) -> None:
         match_row = {
