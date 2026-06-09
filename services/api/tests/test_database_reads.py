@@ -15,6 +15,7 @@ from services.editorial import (
     _qualification_minutes_for_window,
     _resolve_team_type,
     _select_team_row_for_slug,
+    _subject_team_id_for_match,
     _subject_team_for_match,
     _team_style_window_label,
     get_match_detail,
@@ -216,6 +217,19 @@ class DatabaseReadTests(unittest.TestCase):
 
         self.assertEqual(subject_slug, "portugal")
         self.assertEqual(subject_name, "Portugal")
+
+    def test_subject_team_id_for_match_returns_away_id_when_subject_is_away_team(self) -> None:
+        subject_team_id = _subject_team_id_for_match(
+            {
+                "home_team_id": 10,
+                "home_team_name": "Valencia",
+                "away_team_id": 90,
+                "away_team_name": "Portugal",
+            },
+            "portugal",
+        )
+
+        self.assertEqual(subject_team_id, 90)
 
     def test_get_match_detail_uses_database_match(self) -> None:
         match_row = {
