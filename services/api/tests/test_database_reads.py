@@ -11,6 +11,7 @@ from schemas.match import MetricValue
 from services.editorial import (
     _date_range_label,
     _focus_areas_for_slug,
+    _format_metric_value,
     _match_card_from_row,
     _qualification_minutes_for_window,
     _resolve_team_type,
@@ -317,6 +318,11 @@ class DatabaseReadTests(unittest.TestCase):
             _focus_areas_for_slug("unknown-team"),
             ["build-up structure", "pressing behavior", "territorial control"],
         )
+
+    def test_format_metric_value_handles_percentages_and_counts(self) -> None:
+        self.assertEqual(_format_metric_value("field_tilt", 0.704), "70.4%")
+        self.assertEqual(_format_metric_value("center_lane_build_up_share", 0.558), "55.8%")
+        self.assertEqual(_format_metric_value("progressive_passes", 106.0), "106")
 
     def test_get_team_style_uses_window_metrics(self) -> None:
         team_row = {
