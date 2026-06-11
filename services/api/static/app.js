@@ -122,7 +122,7 @@ function renderTeamStyle(style) {
               <div class="window-head">
                 <div>
                   <h4 class="window-title">${window.label}</h4>
-                  <p class="window-meta">${window.match_count} match${window.match_count === 1 ? "" : "es"}${window.date_range_label ? ` · ${window.date_range_label}` : ""}</p>
+                  <p class="window-meta">${window.match_count} match${window.match_count === 1 ? "" : "es"}${window.date_range_label ? ` - ${window.date_range_label}` : ""}</p>
                 </div>
                 <span class="tag">${window.window_type.replace("_", " ")}</span>
               </div>

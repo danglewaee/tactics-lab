@@ -73,6 +73,14 @@ This repository currently contains the project foundation:
 5. Inspect the ETL bootstrap plan with `python jobs/etl/main.py plan`.
 6. Ingest a focused dataset slice with `python jobs/etl/main.py ingest-statsbomb --raw-dir data/raw/statsbomb --team "Manchester United" --team "Portugal"`.
 
+## Verify The Current Code
+
+The repository currently uses standard-library `unittest` tests:
+
+1. `python -m unittest discover -s jobs/etl/tests -p test*.py`
+2. `python -m unittest discover -s services/api/tests -p test*.py`
+3. `python -m compileall services/api jobs/etl`
+
 ## MU + Portugal Backfill
 
 Run the focused backfill in this order:

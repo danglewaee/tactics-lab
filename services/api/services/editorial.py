@@ -814,7 +814,7 @@ def _team_style_window_label(row: dict[str, Any]) -> str:
         return "All ingested matches"
     if window_type == "competition_season":
         if competition_name and season_name:
-            return f"{competition_name} · {season_name}"
+            return f"{competition_name} - {season_name}"
         if competition_name:
             return str(competition_name)
         if season_name:
