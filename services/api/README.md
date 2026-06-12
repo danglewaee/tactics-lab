@@ -11,6 +11,7 @@ Keep analytics logic out of request handlers. Heavy computation should live in `
 ## Bootstrap Endpoints
 
 - `GET /`
+- `GET /preview`
 - `GET /api/health`
 - `GET /api/teams`
 - `GET /api/teams/{team_slug}`
@@ -20,4 +21,3 @@ Keep analytics logic out of request handlers. Heavy computation should live in `
 - `GET /api/matches/{match_id}/reports`
 
 The current responses are editorial placeholders for `Manchester United` and `Portugal`. They establish the API shape before the database-backed implementation lands.
-
