@@ -16,6 +16,8 @@ Keep analytics logic out of request handlers. Heavy computation should live in `
 - `GET /api/teams`
 - `GET /api/teams/{team_slug}`
 - `GET /api/teams/{team_slug}/matches`
+- `GET /api/teams/{team_slug}/style`
+- `GET /api/teams/{team_slug}/players`
 - `GET /api/matches/{match_id}`
 - `GET /api/matches/{match_id}/network`
 - `GET /api/matches/{match_id}/reports`
