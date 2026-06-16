@@ -7,4 +7,4 @@ Future `Next.js` frontend for:
 - compare view
 
 The web app should treat the API as the source of truth for tactical metrics and report content.
-
+Until the Next.js app is built, the FastAPI preview is available at `GET /preview`.
